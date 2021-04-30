@@ -1,0 +1,317 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="f85d5e40-b694-470b-96f2-f04f54f08f0f" >
+		<db:generic-connection url="jdbc:postgresql://localhost:5432/postgres" driverClassName="org.postgresql.Driver" user="postgres" password="Donkeykong6" />
+	</db:config>
+	<validation:config name="Validation_Config" doc:name="Validation Config" doc:id="2208b2ef-f1c2-4c07-bdec-42e3bc55388e" />
+	<flow name="get-all" doc:id="236058a6-64c1-4c64-b272-dd7d48fd96bd" >
+		<db:select doc:name="Select" doc:id="f7c76c07-e903-4388-b012-dfdcbcffcef5" config-ref="Database_Config">
+			<db:sql ><![CDATA[SELECT * FROM fullview]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="486bce76-bbda-4890-9d73-afdc6b5e6f50">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	ID: payload01.id,
+	code: payload01.code default "",
+	price: payload01.price default 0,
+	departureDate: payload01.departuredate default "",
+	origin: payload01.origin default "",
+	destination: payload01.destination default "",
+	emptySeats: payload01.emptyseats default 0,
+	plane: {
+		"type": payload01.plane_type default "",
+		totalSeats: payload01.totalseats default 0
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="get-id" doc:id="9b3b6feb-0c82-4715-88f5-6fa3c0625b9c" >
+		<db:select doc:name="Select" doc:id="1c695bac-b0c8-4403-bd60-3b2694cba02d" config-ref="Database_Config" >
+			<db:sql ><![CDATA[SELECT * FROM fullview WHERE id=:id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[output application/java
+---
+{
+	id: attributes.uriParams.ID
+}]]]></db:input-parameters>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="64ca0d60-f79e-49da-b2fe-fdfdcca4d8b4" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload map ( payload01 , indexOfPayload01 ) -> {
+	ID: payload01.id default 0,
+	code: payload01.code default "",
+	price: payload01.price default 0,
+	departureDate: payload01.departuredate default "",
+	origin: payload01.origin default "",
+	destination: payload01.destination default "",
+	emptySeats: payload01.emptyseats default 0,
+	plane: {
+		"type": payload01.plane_type default "",
+		totalSeats: payload01.totalseats default 0
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="post" doc:id="0da74e5f-09e1-4739-9f36-9a6eaa5c6385" >
+		<db:insert doc:name="Insert" doc:id="353391bf-3671-447e-a536-7ba12d1b771e" config-ref="Database_Config">
+			<db:sql ><![CDATA[insert into flights(code, price, departuredate, origin, destination, emptyseats, plane_id)
+	values(:code, :price, :departureDate, :origin, :destination, :emptyseats, (SELECT plane_id WHERE plane_type=:plane));]]></db:sql>
+			<db:input-parameters ><![CDATA[#[output application/java
+---
+{
+	emptyseats: payload.emptySeats,
+	plane: payload.plane."type",
+	code: payload.code,
+	price: payload.price,
+	origin: payload.origin,
+	destination: payload.destination,
+	departureDate: payload.departureDate
+}]]]></db:input-parameters>
+		</db:insert>
+		<ee:transform doc:name="Transform Message" doc:id="cd127190-a6f8-4b3d-870c-0162d3dc24e9" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	message: "Flight added!"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="delete-by-id" doc:id="bf4dad7f-10d0-4525-81e0-974d2d158b15" >
+		<db:delete doc:name="Delete" doc:id="353740f8-ece5-4d74-b7a9-16e21a28de20" config-ref="Database_Config">
+			<db:sql ><![CDATA[DELETE FROM flights WHERE id=:id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[output application/java
+---
+{
+	id: attributes.uriParams.ID
+}]]]></db:input-parameters>
+		</db:delete>
+		<ee:transform doc:name="Transform Message" doc:id="77764e73-277c-485f-8547-972760ccaa81">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{
+	message: "Flight Deleted!"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="put" doc:id="d949284a-3c34-48fe-95c9-b9171e13780d" >
+		<db:update doc:name="Update" doc:id="8a6500ff-468e-49c7-ac5f-ea32faea3b12" config-ref="Database_Config">
+			<db:sql><![CDATA[UPDATE flights SET (code=:code, price=:price, departuredate=:departureDate, origin=:origin, destination=:destination, emptyseats=:emptySeats, plane_id=(SELECT plane_id WHERE plane_type=:type)) WHERE id=:id]]></db:sql>
+			<db:input-parameters><![CDATA[#[output application/java
+---
+{
+	code: payload.code,
+	price: payload.price,
+	origin: payload.origin,
+	destination: payload.destination,
+	departureDate: payload.departureDate,
+	id: attributes.uriParams.ID,
+	"type": payload.plane."type",
+	emptySeats: payload.emptySeats
+}]]]></db:input-parameters>
+		</db:update>
+		<ee:transform doc:name="Copy_of_Transform Message" doc:id="bcb30b6e-92f3-4f94-9e09-2f80a029ff5e">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{
+	message: "Flight Updated!"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<flow name="patch-code" doc:id="403ccc6c-6f5d-4d68-97cd-bff9c131ef53" >
+		<validation:is-not-null doc:name="Is not null" doc:id="4652c80f-8070-41b3-8620-0c939125d9f8" config-ref="Validation_Config" value="#[payload.code]"/>
+		<db:update doc:name="Code Update" doc:id="871434d9-7335-4e15-8881-ea7909c8a3a5" config-ref="Database_Config" >
+			<db:sql ><![CDATA[UPDATE flights SET (code=:code) WHERE id=:id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[output application/java
+---
+{
+	code: payload.code,
+	id: attributes.uriParams.'ID'
+}]]]></db:input-parameters>
+		</db:update>
+		<error-handler>
+			<on-error-continue enableNotifications="true" logException="true" doc:name="Copy_of_On Error Continue" doc:id="6c7c6468-f9d3-451d-b6b4-1c8a90087c3e" >
+				<ee:transform doc:name="Copy_of_Transform Message" doc:id="ad112b58-7167-4c36-89b1-6dcea0fe7f5a" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="Patch-Price" doc:id="e2c82b62-0e3d-4104-8fb5-dc9611dc3c7a" >
+		<validation:is-not-null doc:name="Is not null" doc:id="d7d0a8b5-f534-433f-b584-56f52836ee3c" config-ref="Validation_Config" value="#[payload.price]"/>
+		<db:update doc:name="Price Update" doc:id="f7ddd09b-bcbf-4c22-b754-f82402d73dcb" config-ref="Database_Config" >
+			<db:sql ><![CDATA[UPDATE flights SET (price=:price) WHERE id=:id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[output application/java
+---
+{
+	price: payload.price,
+	id: attributes.uriParams.'ID'
+}]]]></db:input-parameters>
+		</db:update>
+		<error-handler>
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="605f2027-4d67-4ee0-95e4-46d2736e429a">
+				<ee:transform doc:name="Transform Message" doc:id="d3cbf75e-4e20-4371-91f9-2f4802a00a7c">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="Patch-DepartureDate" doc:id="1063ce60-7538-49e2-acef-0df71df652a4" >
+		<validation:is-not-null doc:name="Is not null" doc:id="5d6dc8c3-b226-4a19-a92d-a58040e8cf50" config-ref="Validation_Config" value="#[payload.departureDate]"/>
+		<db:update doc:name="Departure Date Update" doc:id="ef2640ca-ea88-492c-ba14-601a8f37f92f" config-ref="Database_Config" >
+			<db:sql ><![CDATA[UPDATE flights SET (departuredate=:departureDate) WHERE id=:id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[output application/java
+---
+{
+	id: attributes.uriParams.'ID',
+	departureDate: payload.departureDate
+}]]]></db:input-parameters>
+		</db:update>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="Copy_of_On Error Continue" doc:id="8505a1e9-da8a-46c5-b762-e9eecb39f3f5" >
+				<ee:transform doc:name="Copy_of_Transform Message" doc:id="e80f38f3-42ca-4063-b8cd-f9b391e6f372" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="Patch-Origin" doc:id="fd0e646d-ca2c-43f4-9be7-d75f59e20cfe" >
+		<validation:is-not-null doc:name="Is not null" doc:id="278b333d-4ace-4079-be02-2cfb95834344" config-ref="Validation_Config" value="#[payload.origin]"/>
+		<db:update doc:name="Origin Update" doc:id="78ba1ad1-46fe-4658-bfe1-9a707f0e212e" config-ref="Database_Config" >
+			<db:sql ><![CDATA[UPDATE flights SET (origin=:origin) WHERE id=:id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[output application/java
+---
+{
+	origin: payload.origin,
+	id: attributes.uriParams.'ID'
+}]]]></db:input-parameters>
+		</db:update>
+		<error-handler>
+			<on-error-continue enableNotifications="true" logException="true" doc:name="Copy_of_Copy_of_Copy_of_On Error Continue" doc:id="01c20c83-a30e-41c4-a946-438d8f42bc4a" >
+				<ee:transform doc:name="Copy_of_Copy_of_Copy_of_Transform Message" doc:id="9e2169c0-2d2f-4daa-ad6c-68d1c02450b5" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="Patch-destination" doc:id="6203c62e-710c-4e5c-82dc-722ed27164ae" >
+		<validation:is-not-null doc:name="Is not null" doc:id="519c7dd0-e330-4b92-9d67-00b920d06602" config-ref="Validation_Config" value="#[payload.destination]"/>
+		<db:update doc:name="Destination Update" doc:id="f448d607-0fef-46d8-96a3-e42cfce3d662" config-ref="Database_Config" >
+			<db:sql ><![CDATA[UPDATE flights SET (destination=:destination) WHERE id=:id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[output application/java
+---
+{
+	destination: payload.destination,
+	id: attributes.uriParams.ID
+}]]]></db:input-parameters>
+		</db:update>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="Copy_of_Copy_of_On Error Continue" doc:id="9201e5e4-75e4-4b0c-a770-928c72983df8">
+				<ee:transform doc:name="Copy_of_Copy_of_Transform Message" doc:id="04bdaa13-dcf2-463f-b26b-b957a412542c">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="Patch-EmptySeats" doc:id="ee4bb026-f652-4ac0-9c56-28656a109f81" >
+		<validation:is-not-null doc:name="Is not null" doc:id="a7dbe086-d659-4f4d-9d86-6194a6a3c07b" config-ref="Validation_Config" value='#[payload.emptySeats]' />
+		<db:update doc:name="EmptySeats Update" doc:id="7a31ee45-9b11-43e4-a2c9-62c01cc5e48b" config-ref="Database_Config" >
+			<db:sql ><![CDATA[UPDATE flights SET (emptyseats=:emptySeats) WHERE id=:id]]></db:sql>
+			<db:input-parameters ><![CDATA[#[output application/java
+---
+{
+	id: attributes.uriParams.ID,
+	emptySeats: payload.emptySeats
+}]]]></db:input-parameters>
+		</db:update>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="Copy_of_Copy_of_Copy_of_On Error Continue" doc:id="af2bf9ea-a0fd-40e8-9b85-c008a9d891f0" >
+				<ee:transform doc:name="Copy_of_Copy_of_Copy_of_Transform Message" doc:id="c7ee131c-0ea3-41a8-81a9-8ee4fd3c1da4" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+	<flow name="Patch-Plane" doc:id="28d96eb4-0ffd-4084-803f-41c349d67ae0" >
+		<validation:is-not-null doc:name="Is not null" doc:id="1e67ac85-a313-4cfa-bff7-5cc15a14f110" config-ref="Validation_Config" value='#[payload.plane."type"]'/>
+		<db:update doc:name="Plane Update" doc:id="656cfcce-fb01-4285-b837-93d2025ceda2" config-ref="Database_Config">
+			<db:sql><![CDATA[UPDATE flights SET (plane_id=(SELECT plane_id WHERE plane_type=:type)) WHERE id=:id]]></db:sql>
+			<db:input-parameters><![CDATA[#[output application/java
+---
+{
+	id: attributes.uriParams.ID,
+	"type": payload.plane."type"
+}]]]></db:input-parameters>
+		</db:update>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="Copy_of_Copy_of_Copy_of_Copy_of_On Error Continue" doc:id="883ab23c-b91d-49a2-81e6-25e85e3cb5bc" >
+				<ee:transform doc:name="Copy_of_Copy_of_Copy_of_Copy_of_Transform Message" doc:id="c9f5ce81-330e-406a-96fa-cb82ffd4f6af" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+	</flow>
+</mule>

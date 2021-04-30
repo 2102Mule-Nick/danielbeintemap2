@@ -1,0 +1,107 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="flights" format="json">
+      <types:shape format="weave" example="examples/american-flights-example.json"><![CDATA[%dw 2.0
+
+type flights = Array<{|  ID: Number {"typeId": "int"},   code: String,   price: Number {"typeId": "double"},   departureDate: String,   origin: String,   destination: String,   emptySeats: Number {"typeId": "int"},   plane: {|    "type": String,     totalSeats: Number {"typeId": "int"}  |}|}> {"example": "[{\\\"ID\\\":1,\\\"code\\\":\\\"ER38sd\\\",\\\"price\\\":400.00,\\\"departureDate\\\":\\\"2016\\/03\\/20\\\",\\\"origin\\\":\\\"MUA\\\",\\\"destination\\\":\\\"SFO\\\",\\\"emptySeats\\\":0,\\\"plane\\\":{\\\"type\\\":\\\"Boeing 737\\\",\\\"totalSeats\\\":150}},{\\\"ID\\\":2,\\\"code\\\":\\\"ER45if\\\",\\\"price\\\":345.99,\\\"departureDate\\\":\\\"2016\\/02\\/11\\\",\\\"origin\\\":\\\"MUA\\\",\\\"destination\\\":\\\"LAX\\\",\\\"emptySeats\\\":52,\\\"plane\\\":{\\\"type\\\":\\\"Boeing 777\\\",\\\"totalSeats\\\":300}}]"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#486bce76-bbda-4890-9d73-afdc6b5e6f50">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="flights"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#64ca0d60-f79e-49da-b2fe-fdfdcca4d8b4">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="flights"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#353391bf-3671-447e-a536-7ba12d1b771e">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="flights"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#8a6500ff-468e-49c7-ac5f-ea32faea3b12">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="flights"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#3c67c2b4-3c3e-4218-bbca-0c8e3773b483">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="flights"/>
+        </types:message>
+      </types:input-event>
+      <types:output-event>
+        <types:message>
+          <types:payload type="flights"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#c3ed772b-a16a-474c-a0bc-459b196c30ae">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:variables>
+          <types:variable name="ID" type="flights"/>
+        </types:variables>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#ee65ea6b-b205-4ae7-9de0-bd8caac4336c">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="flights"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#1e67ac85-a313-4cfa-bff7-5cc15a14f110">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="flights"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#a7dbe086-d659-4f4d-9d86-6194a6a3c07b">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="flights"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#519c7dd0-e330-4b92-9d67-00b920d06602">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:attributes type="flights"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>
